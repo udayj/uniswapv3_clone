@@ -1,4 +1,6 @@
-pragma solidity ^0.8.14
+pragma solidity ^0.8.14;
+
+import "./lib/Tick.sol";
 
 contract UniswapV3Pool {
     
@@ -64,6 +66,27 @@ contract UniswapV3Pool {
 
         position.update(amount);
 
-        
+        amount0 = 0.998976618347425280 ether;
+        amount1 = 5000 ether;
+        uint256 balance0Before;
+        uint256 balance1Before;
+        if (amount0 > 0) balance0Before = balance0();
+        if (amount1 > 0) balance1Before = balance1();
+        IUniswapV3MintCallback(msg.sender).uniswapV3MintCallback(
+            amount0,
+            amount1
+        );
+        if (amount0 > 0 && balance0Before + amount0 > balance0())
+            revert InsufficientInputAmount();
+        if (amount1 > 0 && balance1Before + amount1 > balance1())
+            revert InsufficientInputAmount();
+    }
+
+    function balance0() internal returns (uint256 balance) {
+        balance = IERC20(token0).balanceOf(address(this));
+    }
+
+    function balance1() internal returns (uint256 balance) {
+        balance = IERC20(token1).balanceOf(address(this));
     }
 }
