@@ -2,6 +2,9 @@ pragma solidity ^0.8.14;
 
 import "./lib/Tick.sol";
 import "./lib/Position.sol";
+import "./lib/TickBitmap.sol";
+import "./lib/TickMath.sol";
+import "./lib/Math.sol";
 import "./interfaces/IUniswapV3MintCallback.sol";
 import "./interfaces/IUniswapV3SwapCallback.sol";
 import "./interfaces/IERC20.sol";
@@ -33,6 +36,7 @@ contract UniswapV3Pool {
     );
 
     using Tick for mapping(int24 => Tick.Info);
+    using TickBitmap for mapping(int16 => uint256);
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
 
@@ -57,7 +61,9 @@ contract UniswapV3Pool {
     uint128 public liquidity;
 
     mapping(int24 => Tick.Info) public ticks;
+    mapping(int16 => uint256) public tickBitmap;
     mapping(bytes32 => Position.Info) public positions;
+
 
     constructor(
         address token0_,
@@ -87,8 +93,16 @@ contract UniswapV3Pool {
 
         if (amount == 0) revert ZeroLiquidity();
 
-        ticks.update(lowerTick, amount);
-        ticks.update(upperTick, amount);
+        bool flippedLower = ticks.update(lowerTick, amount);
+        bool flippedUpper = ticks.update(upperTick, amount);
+
+        if (flippedLower) {
+            tickBitmap.flipTick(lowerTick, 1);
+        }
+
+        if (flippedUpper) {
+            tickBitmap.flipTick(upperTick, 1);
+        }
 
         Position.Info storage position = positions.get(
             owner,
@@ -97,6 +111,14 @@ contract UniswapV3Pool {
         );
 
         position.update(amount);
+
+        Slot0 memory slot0_ = slot0;
+
+        amount0 = Math.calcAmount0Delta(
+            TickMath.getSqrtRatioAtTick(slot0_.tick),
+            TickMath.getSqrtRatioAtTick(upperTick),
+            amount
+        );
 
         amount0 = 0.998976618347425280 ether;
         amount1 = 5000 ether;
