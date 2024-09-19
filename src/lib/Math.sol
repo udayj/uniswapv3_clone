@@ -15,13 +15,13 @@ library Math {
         if (sqrtPriceAX96 > sqrtPriceBX96)
             (sqrtPriceAX96, sqrtPriceBX96) = (sqrtPriceBX96, sqrtPriceAX96);
         require(sqrtPriceAX96>0);
-
-        amount0 = divRoundingUp(
-            mulDivRoundingUp(
+        amount0 = PRBMath.mulDiv(
+            PRBMath.mulDiv(
                 (uint256(liquidity) << FixedPoint96.RESOLUTION),
                 sqrtPriceBX96-sqrtPriceAX96,
                 sqrtPriceBX96
             ),
+            1,
             sqrtPriceAX96
         );
     }
@@ -35,7 +35,7 @@ library Math {
         if (sqrtPriceAX96 > sqrtPriceBX96)
             (sqrtPriceAX96, sqrtPriceBX96) = (sqrtPriceBX96, sqrtPriceAX96);
         
-        amount1 = mulDivRoundingUp(
+        amount1 = PRBMath.mulDiv(
             (uint256(liquidity) << FixedPoint96.RESOLUTION),
             (sqrtPriceBX96 - sqrtPriceAX96),
             FixedPoint96.Q96
