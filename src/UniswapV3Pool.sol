@@ -10,6 +10,7 @@ import "./interfaces/IUniswapV3MintCallback.sol";
 import "./interfaces/IUniswapV3SwapCallback.sol";
 import "./interfaces/IERC20.sol";
 import "./interfaces/IUniswapV3FlashCallback.sol";
+import "./interfaces/IUniswapV3PoolDeployer.sol";
 
 contract UniswapV3Pool {
     
@@ -18,6 +19,7 @@ contract UniswapV3Pool {
     error InsufficientInputAmount();
     error InvalidPriceLimit();
     error NotEnoughLiquidity();
+    error AlreadyInitialized();
 
     event Flash(address indexed recipient, uint256 amount0, uint256 amount1);
     event Mint(
@@ -48,8 +50,11 @@ contract UniswapV3Pool {
     int24 internal constant MIN_TICK = -887272;
     int24 internal constant MAX_TICK = -MIN_TICK;
 
+    // Pool parameters
+    address public immutable factory;
     address public immutable token0;
     address public immutable token1;
+    uint24 public immutable tickSpacing;
 
     struct Slot0 {
         uint160 sqrtPriceX96;
@@ -90,16 +95,22 @@ contract UniswapV3Pool {
 
 
     constructor(
-        address token0_,
-        address token1_,
-        uint160 sqrtPriceX96,
-        int24 tick
+        
     ) {
 
-        token0 = token0_;
-        token1 = token1_;
+       (factory, token0, token1, tickSpacing) = IUniswapV3PoolDeployer(
+            msg.sender
+        ).parameters();
+    }
+
+     function initialize(uint160 sqrtPriceX96) public {
+        if (slot0.sqrtPriceX96 != 0) revert AlreadyInitialized();
+
+        int24 tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
+
         slot0 = Slot0({sqrtPriceX96: sqrtPriceX96, tick: tick});
     }
+
 
     function mint(
         address owner,
