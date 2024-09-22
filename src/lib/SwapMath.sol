@@ -20,6 +20,10 @@ library SwapMath {
     {
         bool zeroForOne = sqrtPriceCurrentX96 >= sqrtPriceTargetX96;
 
+        // we are calculating what would be the delta in the swapped in token for the given 
+        // liquidity level
+        // if it is less than or equal to the amountRemaining tokens of the swapped in token
+        // then we reach the price boundary
         amountIn = zeroForOne
             ? Math.calcAmount0Delta(
                 sqrtPriceCurrentX96,

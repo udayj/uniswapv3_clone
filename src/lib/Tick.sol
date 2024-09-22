@@ -29,6 +29,10 @@ library Tick {
         }
         flipped = (liquidityAfter == 0) != (liquidityBefore == 0);
         tickInfo.liquidityGross = liquidityAfter;
+        // while swapping, when crossing an upper tick, we are adding the liquidityDelta to the state liquidity
+        // hence, if liquidityDelat is negative, then only the liquidity will ultimately get substrated from the current liquidity
+        // opposite holds for lower tick, we reverse the sign of the liquidityDelat before substracting the liquidity and that is
+        // why liquidityDelta is added at lower ticks
         tickInfo.liquidityNet = upper
             ? int128(int256(tickInfo.liquidityNet) - liquidityDelta)
             : int128(int256(tickInfo.liquidityNet) + liquidityDelta);
