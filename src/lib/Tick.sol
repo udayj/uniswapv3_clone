@@ -8,6 +8,8 @@ library Tick {
         bool initialized;
         uint128 liquidityGross;
         int128 liquidityNet;
+        uint256 feeGrowthOutside0X128;
+        uint256 feeGrowthOutside1X128;
     }
 
     function update(
