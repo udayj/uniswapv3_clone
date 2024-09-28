@@ -12,38 +12,21 @@ contract UniswapV3Quoter {
 
     function quote(QuoteParams memory params)
         public
-        returns (
-            uint256 amountOut,
-            uint160 sqrtPriceX96After,
-            int24 tickAfter
-        )
+        returns (uint256 amountOut, uint160 sqrtPriceX96After, int24 tickAfter)
     {
-        try
-            IUniswapV3Pool(params.pool).swap(
-                address(this),
-                params.zeroForOne,
-                params.amountIn,
-                abi.encode(params.pool)
-            )
+        try IUniswapV3Pool(params.pool).swap(address(this), params.zeroForOne, params.amountIn, abi.encode(params.pool))
         {} catch (bytes memory reason) {
             return abi.decode(reason, (uint256, uint160, int24));
         }
     }
 
-    function uniswapV3SwapCallback(
-        int256 amount0Delta,
-        int256 amount1Delta,
-        bytes memory data
-    ) external view {
+    function uniswapV3SwapCallback(int256 amount0Delta, int256 amount1Delta, bytes memory data) external view {
         address pool = abi.decode(data, (address));
 
-        uint256 amountOut = amount0Delta > 0
-            ? uint256(-amount1Delta)
-            : uint256(-amount0Delta);
+        uint256 amountOut = amount0Delta > 0 ? uint256(-amount1Delta) : uint256(-amount0Delta);
 
         // Get latest price and tick from updated Pool contract
-        (uint160 sqrtPriceX96After, int24 tickAfter) = IUniswapV3Pool(pool)
-            .slot0();
+        (uint160 sqrtPriceX96After, int24 tickAfter) = IUniswapV3Pool(pool).slot0();
 
         // Load data into memory in 32 byte slots since that is what abi.encode does
         assembly {
