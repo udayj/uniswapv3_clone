@@ -85,6 +85,9 @@ contract UniswapV3Pool {
 
     Slot0 public slot0;
     uint128 public liquidity;
+    uint256 public feeGrowthGlobal0X128;
+    uint256 public feeGrowthGlobal1X128;
+
 
     mapping(int24 => Tick.Info) public ticks;
     mapping(int16 => uint256) public tickBitmap;

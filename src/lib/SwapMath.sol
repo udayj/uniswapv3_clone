@@ -8,9 +8,16 @@ library SwapMath {
         uint160 sqrtPriceCurrentX96,
         uint160 sqrtPriceTargetX96,
         uint128 liquidity,
-        uint256 amountRemaining
-    ) internal pure returns (uint160 sqrtPriceNextX96, uint256 amountIn, uint256 amountOut) {
+        uint256 amountRemaining,
+        uint24 fee
+    ) internal pure returns (uint160 sqrtPriceNextX96, uint256 amountIn, uint256 amountOut, uint256 feeAmount) {
         bool zeroForOne = sqrtPriceCurrentX96 >= sqrtPriceTargetX96;
+
+        uint256 amountRemainingLessFee = PRBMath.mulDiv(
+            amountRemaining,
+            1e6 - fee,
+            1e6
+        );
 
         // we are calculating what would be the delta in the swapped in token for the given
         // liquidity level
@@ -20,11 +27,11 @@ library SwapMath {
             ? Math.calcAmount0Delta(sqrtPriceCurrentX96, sqrtPriceTargetX96, liquidity)
             : Math.calcAmount1Delta(sqrtPriceCurrentX96, sqrtPriceTargetX96, liquidity);
 
-        if (amountRemaining >= amountIn) {
+        if (amountRemainingLessFee >= amountIn) {
             sqrtPriceNextX96 = sqrtPriceTargetX96;
         } else {
             sqrtPriceNextX96 =
-                Math.getNextSqrtPriceFromInput(sqrtPriceCurrentX96, liquidity, amountRemaining, zeroForOne);
+                Math.getNextSqrtPriceFromInput(sqrtPriceCurrentX96, liquidity, amountRemainingLessFee, zeroForOne);
         }
 
         amountIn = Math.calcAmount0Delta(sqrtPriceCurrentX96, sqrtPriceNextX96, liquidity);
