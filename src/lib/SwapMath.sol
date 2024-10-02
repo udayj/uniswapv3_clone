@@ -23,9 +23,19 @@ library SwapMath {
         // liquidity level
         // if it is less than or equal to the amountRemaining tokens of the swapped in token
         // then we reach the price boundary
-        amountIn = zeroForOne
-            ? Math.calcAmount0Delta(sqrtPriceCurrentX96, sqrtPriceTargetX96, liquidity)
-            : Math.calcAmount1Delta(sqrtPriceCurrentX96, sqrtPriceTargetX96, liquidity);
+       amountIn = zeroForOne
+            ? Math.calcAmount0Delta(
+                sqrtPriceCurrentX96,
+                sqrtPriceTargetX96,
+                liquidity,
+                true
+            )
+            : Math.calcAmount1Delta(
+                sqrtPriceCurrentX96,
+                sqrtPriceTargetX96,
+                liquidity,
+                true
+            );
 
         if (amountRemainingLessFee >= amountIn) {
             sqrtPriceNextX96 = sqrtPriceTargetX96;
@@ -34,11 +44,44 @@ library SwapMath {
                 Math.getNextSqrtPriceFromInput(sqrtPriceCurrentX96, liquidity, amountRemainingLessFee, zeroForOne);
         }
 
-        amountIn = Math.calcAmount0Delta(sqrtPriceCurrentX96, sqrtPriceNextX96, liquidity);
-        amountOut = Math.calcAmount1Delta(sqrtPriceCurrentX96, sqrtPriceNextX96, liquidity);
+       bool max = sqrtPriceNextX96 == sqrtPriceTargetX96;
 
-        if (!zeroForOne) {
-            (amountIn, amountOut) = (amountOut, amountIn);
+        if (zeroForOne) {
+            amountIn = max
+                ? amountIn
+                : Math.calcAmount0Delta(
+                    sqrtPriceCurrentX96,
+                    sqrtPriceNextX96,
+                    liquidity,
+                    true
+                );
+            amountOut = Math.calcAmount1Delta(
+                sqrtPriceCurrentX96,
+                sqrtPriceNextX96,
+                liquidity,
+                false
+            );
+        } else {
+            amountIn = max
+                ? amountIn
+                : Math.calcAmount1Delta(
+                    sqrtPriceCurrentX96,
+                    sqrtPriceNextX96,
+                    liquidity,
+                    true
+                );
+            amountOut = Math.calcAmount0Delta(
+                sqrtPriceCurrentX96,
+                sqrtPriceNextX96,
+                liquidity,
+                false
+            );
+        }
+
+       if (!max) {
+            feeAmount = amountRemaining - amountIn;
+        } else {
+            feeAmount = Math.mulDivRoundingUp(amountIn, fee, 1e6 - fee);
         }
     }
 }
